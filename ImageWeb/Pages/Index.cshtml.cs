@@ -28,7 +28,27 @@ namespace ImageWeb.Pages
     }
     public async Task OnGetAsync()
     {
-      return null;
+      var imageUrl=_options.ApiUrl;
+
+      var thumbsUrl=Flurl.Url.Combine(imageUrl,"/thumbs/");
+
+      Task<string> getFullImages=_httpClient.GetStringAsync(imageUrl);
+
+      Task<string> getThumbnailImages=_httpClient.GetStringAsync(thumbsUrl);
+
+      await Task.WhenAll(getFullImages);
+
+      string fullImageJson=getFullImages.Result;
+
+      IEnumerable<string> fullImageList=JsonConvert.DeserializeObject<IEnumerable<String>>(fullImageJson);
+      
+      FullImageList =fullImageList.ToList<string>();
+
+      string thumbnailImageJson=getThumbnailImages.Result;
+
+      IEnumerable<string> thumbnailImageList=JsonConvert.DeserializeObject<IEnumerable<String>>(thumbnailImageJson);
+      
+      ThumbnailImageList =thumbnailImageList.ToList<string>();
     }
 
     [BindProperty]
@@ -36,7 +56,19 @@ namespace ImageWeb.Pages
 
     public async Task<IActionResult> OnPostAsync()
     {
-      return null;
+
+      if(Upload !=null && Upload.Length>0)
+      {
+        var imageUrl=_options.ApiUrl;
+        using(var image=new StreamContent(Upload.OpenReadStream()))
+        {
+          image.Headers.ContentType=new System.Net.Http.Headers.MediaTypeHeaderValue(Upload.ContentType);
+
+          var resposne=await _httpClient.PostAsync(imageUrl,image);
+        }
+      }
+
+      return RedirectToPage("/Index");
     }
   }
 }
